@@ -72,4 +72,119 @@
   languageButton.addEventListener('click', () => setLanguage(language === 'en' ? 'ru' : 'en'));
   document.getElementById('print').addEventListener('click', () => window.print());
   try { if (localStorage.getItem('cv-language') === 'ru') setLanguage('ru'); } catch { /* English remains readable. */ }
+
+  // A decorative, local-only network; the page remains usable without canvas.
+  const hero = document.querySelector('.hero');
+  const canvas = hero.querySelector('.hero-network');
+  const context = canvas.getContext('2d');
+  if (!context) return;
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const pointer = { x: 0, y: 0, active: false };
+  let width = 0;
+  let height = 0;
+  let points = [];
+  let frame = 0;
+  let lastTime = 0;
+  let elapsed = 0;
+  let inView = true;
+
+  function draw(delta) {
+    elapsed += delta;
+    context.clearRect(0, 0, width, height);
+    const reach = Math.min(155, width * 0.32);
+    for (const point of points) {
+      const baseX = point.x + Math.sin(elapsed * 0.16 + point.phase) * 12;
+      const baseY = point.y + Math.cos(elapsed * 0.12 + point.phase) * 10;
+      const dx = baseX - pointer.x;
+      const dy = baseY - pointer.y;
+      const distance = Math.hypot(dx, dy);
+      const force = pointer.active ? Math.max(0, 1 - distance / 150) : 0;
+      const ease = 1 - Math.exp(-delta * 5);
+      point.offsetX += ((dx / (distance || 1)) * force * 25 - point.offsetX) * ease;
+      point.offsetY += ((dy / (distance || 1)) * force * 25 - point.offsetY) * ease;
+      point.drawX = baseX + point.offsetX;
+      point.drawY = baseY + point.offsetY;
+      point.glow = force;
+    }
+    context.lineWidth = 0.7;
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      for (let j = i + 1; j < points.length; j++) {
+        const other = points[j];
+        const distance = Math.hypot(point.drawX - other.drawX, point.drawY - other.drawY);
+        if (distance >= reach) continue;
+        const opacity = (1 - distance / reach) * (0.15 + Math.max(point.glow, other.glow) * 0.16);
+        context.strokeStyle = `rgba(108, 127, 86, ${opacity})`;
+        context.beginPath();
+        context.moveTo(point.drawX, point.drawY);
+        context.lineTo(other.drawX, other.drawY);
+        context.stroke();
+      }
+      context.fillStyle = `rgba(108, 127, 86, ${0.25 + point.glow * 0.3})`;
+      context.beginPath();
+      context.arc(point.drawX, point.drawY, 1.4 + point.glow * 0.6, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  function animate(time) {
+    const delta = lastTime ? Math.min((time - lastTime) / 1000, 0.05) : 0;
+    lastTime = time;
+    draw(delta);
+    frame = requestAnimationFrame(animate);
+  }
+
+  function syncAnimation() {
+    cancelAnimationFrame(frame);
+    lastTime = 0;
+    if (!reducedMotion.matches && !document.hidden && inView) {
+      frame = requestAnimationFrame(animate);
+    } else if (reducedMotion.matches) {
+      pointer.active = false;
+      for (const point of points) point.offsetX = point.offsetY = 0;
+      draw(0);
+    }
+  }
+
+  function resize() {
+    width = hero.clientWidth;
+    height = hero.clientHeight;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const count = Math.min(76, Math.max(24, Math.round(width * height / 14000)));
+    // Spread the points evenly, with a little variation to avoid a rigid grid.
+    const columns = Math.ceil(Math.sqrt(count * width / height));
+    const rows = Math.ceil(count / columns);
+    points = Array.from({ length: count }, (_, index) => ({
+      x: ((index % columns) + 0.2 + Math.random() * 0.6) * width / columns,
+      y: (Math.floor(index / columns) + 0.2 + Math.random() * 0.6) * height / rows,
+      phase: Math.random() * Math.PI * 2,
+      offsetX: 0,
+      offsetY: 0
+    }));
+    pointer.active = false;
+    draw(0);
+  }
+
+  hero.addEventListener('pointermove', event => {
+    if (reducedMotion.matches || event.pointerType === 'touch') return;
+    const bounds = hero.getBoundingClientRect();
+    pointer.x = event.clientX - bounds.left;
+    pointer.y = event.clientY - bounds.top;
+    pointer.active = true;
+  }, { passive: true });
+  hero.addEventListener('pointerleave', () => { pointer.active = false; });
+  document.addEventListener('visibilitychange', syncAnimation);
+  reducedMotion.addEventListener('change', syncAnimation);
+  new ResizeObserver(resize).observe(hero);
+  new IntersectionObserver(entries => {
+    inView = entries[0].isIntersecting;
+    if (!inView) pointer.active = false;
+    syncAnimation();
+  }).observe(hero);
+  resize();
+  syncAnimation();
 })();
