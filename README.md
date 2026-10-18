@@ -6,6 +6,8 @@ Buildless English/Russian website, hosted at https://away.carapulko.xyz/.
 
 Public files are in `dist/`. Edit the English content in `dist/index.html`, Russian translations in `dist/app.js`, and layout in `dist/styles.css`. No dependencies or build step are required. The English version is usable without JavaScript. The print button opens the browser print dialog with a dedicated print stylesheet.
 
+The resume is served at `/resume.pdf`, linked from the introduction and contact section. To update it, copy `../cv-as-latex/output/pdf/resume-rezume.pdf` to `dist/resume.pdf` before deploying.
+
 For local preview, run `python3 -m http.server 8000 --directory dist`.
 
 ## Content sources

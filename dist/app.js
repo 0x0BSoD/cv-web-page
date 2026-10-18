@@ -8,6 +8,7 @@
     'hero.line1': 'Системы.', 'hero.line2': 'Код.', 'hero.line3': 'Ясность.',
     'hero.intro': 'Я — Александр Симонов. Platform Engineer: занимаюсь Kubernetes, автоматизацией инфраструктуры и инструментами для разработчиков.',
     'hero.cta': 'Мои проекты <span aria-hidden="true">↘</span>',
+    'hero.resume': 'Резюме (PDF) <span aria-hidden="true">↗</span>',
     'location': 'ЛИМАСОЛ, КИПР', 'hero.scroll': 'Подробнее обо мне ↓',
     'profile.label': 'ОБО МНЕ',
     'profile.title': 'Инфраструктура — фундамент.<br><span class="serif">Инструменты — усилитель.</span>',
@@ -45,6 +46,7 @@
     'contact.intro': 'Есть задача для платформы, идея проекта<br>или хочется обменяться опытом?',
     'contact.linkedin': 'Связаться в LinkedIn', 'contact.github': 'Мой GitHub',
     'contact.print': 'Распечатать / сохранить PDF',
+    'contact.resume': 'Скачать резюме (PDF)',
     'footer.location': 'Сделано в Лимасоле, Кипр.', 'footer.top': 'Наверх ↑'
   };
   const elements = [...document.querySelectorAll('[data-i18n]')];
